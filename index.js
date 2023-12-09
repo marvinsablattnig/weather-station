@@ -91,13 +91,49 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
-  res.render("index.ejs", {
-    location: location,
-    temp: "",
-    imgLink: "",
-    additionalClass: "",
-    bgColor: "lightWeather",
-  });
+  lat = 48.2065464431969;
+  long = 16.38544200750982;
+  location = "Vienna";
+
+  configGetWeather[0].url = getURL(lat, long, "temp");
+  configGetWeather[1].url = getURL(lat, long, "clouds");
+
+  var additionalClass = "appear";
+
+  axios
+    .all(configGetWeather.map((request) => axios(request)))
+    .then(
+      axios.spread((tempData, weatherData) => {
+        console.log(
+          "Data Temp: " +
+            tempData.data.data[0].coordinates[0].dates[0] +
+            " Data Cloud: " +
+            weatherData.data.data[0]
+        );
+        var temp = tempData.data.data[0].coordinates[0].dates[0].value;
+        var weatherInfo = getWeatherIcon(
+          weatherData.data.data[0].coordinates[0].dates[0].value
+        );
+
+        res.render("index.ejs", {
+          location: location,
+          temp: temp,
+          imgLink: weatherInfo.imgLink,
+          additionalClass: additionalClass,
+          bgColor: weatherInfo.bgColor,
+        });
+      })
+    )
+    .catch(function (error) {
+      console.log("error");
+      res.render("index.ejs", {
+        location: "error",
+        temp: "error",
+        imgLink: "",
+        additionalClass: "",
+        bgColor: "lightWeather",
+      });
+    });
 });
 
 function getWeatherIcon(weatherData) {
